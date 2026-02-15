@@ -168,7 +168,7 @@
 
     async function carregarCSV() {
         try {
-            // Buscando o arquivo pontos.csv
+            // Nome do arquivo atualizado
             const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo não encontrado!");
 
@@ -176,11 +176,10 @@
             const decoder = new TextDecoder('utf-8'); 
             const data = decoder.decode(buffer);
 
-            // Divide as linhas
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // CORREÇÃO AQUI: Agora usando split por vírgula (,) para separar colunas
+                // Separador alterado para vírgula
                 const col = linha.split(','); 
                 return {
                     turno: col[0]?.trim() || '-',
@@ -192,28 +191,39 @@
                 };
             });
 
-            atualizarMenus();
+            // Inicia exibindo tudo e configurando menus
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Erro ao carregar o arquivo pontos.csv. Verifique se o nome está correto.</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Erro ao carregar o arquivo pontos.csv.</td></tr>`;
         }
     }
 
+    // Lógica de Filtros Dependentes (em cascata)
     function atualizarMenus() {
-        const criarItens = (campo, id) => {
-            const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v && v !== '-').sort();
-            const container = document.getElementById(id);
+        const campos = ['turno', 'bairro', 'linha', 'tipo'];
+        const ids = { turno: 'dropTurno', bairro: 'dropBairro', linha: 'dropLinha', tipo: 'dropTipo' };
+
+        campos.forEach(campoAlvo => {
+            // Verifica o que pode ser mostrado neste menu baseado nos outros filtros ativos
+            let dadosFiltradosParaMenu = pontos.filter(p => {
+                return (filtroAtivo.turno === null || campoAlvo === 'turno' || p.turno === filtroAtivo.turno) &&
+                       (filtroAtivo.bairro === null || campoAlvo === 'bairro' || p.bairro === filtroAtivo.bairro) &&
+                       (filtroAtivo.linha === null || campoAlvo === 'linha' || p.linha === filtroAtivo.linha) &&
+                       (filtroAtivo.tipo === null || campoAlvo === 'tipo' || p.tipo === filtroAtivo.tipo);
+            });
+
+            const unicos = [...new Set(dadosFiltradosParaMenu.map(p => p[campoAlvo]))]
+                            .filter(v => v && v !== '-')
+                            .sort();
+
+            const container = document.getElementById(ids[campoAlvo]);
             if(container) {
                 container.innerHTML = unicos.map(v => `
-                    <div class="dropdown-item" onclick="setFiltro('${campo}', '${v}')">${v}</div>
+                    <div class="dropdown-item" onclick="setFiltro('${campoAlvo}', '${v}')">${v}</div>
                 `).join('');
             }
-        };
-        criarItens('turno', 'dropTurno');
-        criarItens('bairro', 'dropBairro');
-        criarItens('linha', 'dropLinha');
-        criarItens('tipo', 'dropTipo');
+        });
     }
 
     function setFiltro(campo, valor) {
@@ -236,7 +246,9 @@
         if (busca) {
             res = res.filter(p => Object.values(p).some(v => v.toLowerCase().includes(busca)));
         }
+        
         mostrarTabela(res);
+        atualizarMenus(); // Atualiza as opções dos menus baseadas no filtro atual
     }
 
     function limparFiltros() {
