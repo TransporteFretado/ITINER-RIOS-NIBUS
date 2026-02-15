@@ -168,22 +168,22 @@
 
     async function carregarCSV() {
         try {
-            // Buscando pontos.csv
             const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
             
-            // TENTATIVA 1: Windows-1252 (Padrão Excel Brasil)
-            // Se os acentos continuarem errados, mude 'windows-1252' para 'utf-8' abaixo.
+            // CORREÇÃO DOS ACENTOS:
+            // Tentamos Windows-1252 (comum no Excel Brasil). 
+            // Se ainda assim o 'ç' der erro, troque 'windows-1252' por 'utf-8'.
             const decoder = new TextDecoder('windows-1252'); 
             const data = decoder.decode(buffer);
 
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // REVERTIDO PARA PONTO E VÍRGULA (;) CONFORME SEU ARQUIVO REAL
-                const col = linha.split(';'); 
+                // SEPARADOR POR VÍRGULA (,)
+                const col = linha.split(','); 
                 return {
                     turno: col[0]?.trim() || '-',
                     linha: col[1]?.trim() || '-',
@@ -198,7 +198,7 @@
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados.</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados. Verifique os acentos do arquivo.</td></tr>`;
         }
     }
 
