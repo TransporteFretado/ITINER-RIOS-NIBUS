@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mobilidade Pro - Itinerários</title>
+    <title>Consulta Itinerários</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -154,7 +154,6 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
-    // Relógio em tempo real
     setInterval(() => {
         const rel = document.getElementById('relogio');
         if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
@@ -169,20 +168,20 @@
 
     async function carregarCSV() {
         try {
-            // NOME DO ARQUIVO ATUALIZADO
             const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
-            // ISO-8859-1 para garantir acentos do Excel Brasil
-            const decoder = new TextDecoder('iso-8859-1'); 
+            
+            // CORREÇÃO DEFINITIVA PARA "Ç" E ACENTOS:
+            // O Excel no Brasil salva em 'windows-1252'. 
+            const decoder = new TextDecoder('windows-1252'); 
             const data = decoder.decode(buffer);
 
-            // Divide linhas e remove vazias
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // SEPARADOR POR VÍRGULA CONFORME INFORMADO
+                // SEPARADOR POR VÍRGULA (,)
                 const col = linha.split(','); 
                 return {
                     turno: col[0]?.trim() || '-',
@@ -197,14 +196,14 @@
             atualizarMenus();
             aplicarFiltros();
         } catch (e) { 
-            console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados. Verifique o arquivo pontos.csv</td></tr>`;
+            console.error("Erro ao carregar CSV:", e);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar o arquivo pontos.csv</td></tr>`;
         }
     }
 
     function atualizarMenus() {
         const criarItens = (campo, id) => {
-            const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v !== '-').sort();
+            const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v && v !== '-').sort();
             const container = document.getElementById(id);
             if(container) {
                 container.innerHTML = unicos.map(v => `
@@ -249,9 +248,8 @@
     }
 
     function compartilhar(p) {
-        // Título: Negrito e Caixa Alta
+        // MENSAGEM WHATSAPP FORMATADA
         const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
-        // Data: Negrito e informativo em Itálico
         const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
         
         const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
@@ -279,7 +277,6 @@
         `).join('');
     }
 
-    // Fechar dropdowns ao clicar fora
     window.onclick = function(event) {
         if (!event.target.matches('.filter-btn')) {
             document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
@@ -287,8 +284,6 @@
     }
 
     document.getElementById("search").addEventListener("input", aplicarFiltros);
-    
-    // Inicia o carregamento
     window.onload = carregarCSV;
 </script>
 
