@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Consulta Itinerários Transporte Fretado</title>
+    <title>Mobilidade Pro - Itinerários</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -14,6 +14,7 @@
             --border: #e2e8f0;
             --muted: #64748b;
             --accent: #4361ee15;
+            --danger: #FF0000; /* Nova cor para o botão limpar */
         }
 
         @media (prefers-color-scheme: dark) {
@@ -39,8 +40,9 @@
 
         .container { max-width: 1100px; margin: 0 auto; }
 
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .header h2 { font-size: 1.2rem; margin: 0; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .header-titles h2 { font-size: 1.3rem; margin: 0; }
+        .header-titles p { font-size: 0.85rem; margin: 4px 0 0 0; color: var(--muted); font-weight: 500; }
 
         .search-container { position: relative; margin-bottom: 20px; }
         .search-box input {
@@ -66,7 +68,15 @@
             cursor: pointer; color: var(--text); white-space: nowrap; transition: 0.2s;
             display: flex; align-items: center; gap: 4px;
         }
-        .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+        
+        /* Estilização solicitada para o botão Limpar */
+        #btnLimpar.active, #btnLimpar {
+            background: var(--danger);
+            color: white;
+            border-color: var(--danger);
+        }
+
+        .filter-btn.active:not(#btnLimpar) { background: var(--primary); color: white; border-color: var(--primary); }
 
         .dropdown-content {
             display: none; position: absolute; top: 45px; left: 0;
@@ -107,7 +117,10 @@
 
 <div class="container">
     <div class="header">
-        <h2>🚌 Itinerários Transporte Fretado</h2>
+        <div class="header-titles">
+            <h2>🚌 Itinenários do Transporte Fretado</h2>
+            <p>Facilities & Security</p>
+        </div>
         <div id="relogio" style="font-size: 0.8rem; opacity: 0.6;">00:00:00</div>
     </div>
 
@@ -148,7 +161,7 @@
             <tr>
                 <th>Turno</th>
                 <th>Linha</th>
-                <th>Tipo</th>
+                <th>Tipo de Viagem</th>
                 <th>Bairro</th>
                 <th>Ponto de Passagem</th>
                 <th>Parada</th>
@@ -205,20 +218,17 @@
     }
 
     function atualizarMenus() {
-        // Turnos
         const turnosUnicos = [...new Set(pontos.map(p => p.turno))].sort();
         document.getElementById('dropTurno').innerHTML = turnosUnicos.map(t => `
             <div class="dropdown-item" onclick="setFiltro('turno', '${t}')">${t}</div>
         `).join('');
 
-        // Bairros
         let listaBairros = filtroAtivo.turno ? pontos.filter(p => p.turno === filtroAtivo.turno) : pontos;
         const bairrosUnicos = [...new Set(listaBairros.map(p => p.bairro))].sort();
         document.getElementById('dropBairro').innerHTML = bairrosUnicos.map(b => `
             <div class="dropdown-item" onclick="setFiltro('bairro', '${b}')">${b}</div>
         `).join('');
 
-        // Linhas
         let listaLinhas = pontos;
         if (filtroAtivo.turno) listaLinhas = listaLinhas.filter(p => p.turno === filtroAtivo.turno);
         if (filtroAtivo.bairro) listaLinhas = listaLinhas.filter(p => p.bairro === filtroAtivo.bairro);
@@ -227,7 +237,6 @@
             <div class="dropdown-item" onclick="setFiltro('linha', '${l}')">${l}</div>
         `).join('');
 
-        // Tipos
         let listaTipos = pontos;
         if (filtroAtivo.turno) listaTipos = listaTipos.filter(p => p.turno === filtroAtivo.turno);
         if (filtroAtivo.bairro) listaTipos = listaTipos.filter(p => p.bairro === filtroAtivo.bairro);
@@ -245,8 +254,7 @@
 
         document.getElementById(btnId).innerHTML = `${icones[campo]} ${valor} ▾`;
         document.getElementById(btnId).classList.add('active');
-        document.getElementById('btnLimpar').classList.remove('active');
-
+        
         // Reset cascata
         if (campo === 'turno') {
             filtroAtivo.bairro = null; filtroAtivo.linha = null; filtroAtivo.tipo = null;
@@ -290,8 +298,9 @@
     function limparFiltros() {
         filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
         resetBotao('Turno'); resetBotao('Bairro'); resetBotao('Linha'); resetBotao('Tipo');
-        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btnLimpar').classList.add('active');
+        document.querySelectorAll('.filter-btn').forEach(b => {
+            if(b.id !== 'btnLimpar') b.classList.remove('active');
+        });
         document.getElementById('search').value = "";
         atualizarMenus();
         aplicarFiltros();
@@ -307,11 +316,11 @@
             <tr>
                 <td data-label="Turno" class="col-turno">${p.turno}</td>
                 <td data-label="Linha" class="col-linha">${p.linha}</td>
-                <td data-label="Tipo">${p.tipo}</td>
+                <td data-label="Tipo de Viagem">${p.tipo}</td>
                 <td data-label="Bairro">${p.bairro}</td>
                 <td data-label="Ponto">${p.ponto}</td>
                 <td data-label="Parada">${p.parada}</td>
-                <td data-label="Ação"><button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Avisar</button></td>
+                <td data-label="Ação"><button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Avisar o Time de Transporte</button></td>
             </tr>
         `).join('');
     }
@@ -325,6 +334,4 @@
     carregarCSV();
 </script>
 </body>
-
 </html>
-
