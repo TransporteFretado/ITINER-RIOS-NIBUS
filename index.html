@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Consulta Itinerários</title>
+    <title>Mobilidade Pro - Itinerários</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -168,21 +168,22 @@
 
     async function carregarCSV() {
         try {
+            // Buscando pontos.csv
             const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
             
-            // CORREÇÃO DEFINITIVA PARA "Ç" E ACENTOS:
-            // O Excel no Brasil salva em 'windows-1252'. 
+            // TENTATIVA 1: Windows-1252 (Padrão Excel Brasil)
+            // Se os acentos continuarem errados, mude 'windows-1252' para 'utf-8' abaixo.
             const decoder = new TextDecoder('windows-1252'); 
             const data = decoder.decode(buffer);
 
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // SEPARADOR POR VÍRGULA (,)
-                const col = linha.split(','); 
+                // REVERTIDO PARA PONTO E VÍRGULA (;) CONFORME SEU ARQUIVO REAL
+                const col = linha.split(';'); 
                 return {
                     turno: col[0]?.trim() || '-',
                     linha: col[1]?.trim() || '-',
@@ -196,8 +197,8 @@
             atualizarMenus();
             aplicarFiltros();
         } catch (e) { 
-            console.error("Erro ao carregar CSV:", e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar o arquivo pontos.csv</td></tr>`;
+            console.error(e);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados.</td></tr>`;
         }
     }
 
@@ -248,7 +249,6 @@
     }
 
     function compartilhar(p) {
-        // MENSAGEM WHATSAPP FORMATADA
         const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
         const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
         
@@ -275,12 +275,6 @@
                 </td>
             </tr>
         `).join('');
-    }
-
-    window.onclick = function(event) {
-        if (!event.target.matches('.filter-btn')) {
-            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
-        }
     }
 
     document.getElementById("search").addEventListener("input", aplicarFiltros);
