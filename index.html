@@ -14,7 +14,7 @@
             --border: #e2e8f0;
             --muted: #64748b;
             --accent: #4361ee15;
-            --danger: #FF0000; /* Cor Vermelha solicitada */
+            --danger: #FF0000;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -37,7 +37,6 @@
         }
 
         .container { max-width: 1100px; margin: 0 auto; }
-
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
         .header-titles h2 { font-size: 1.3rem; margin: 0; }
         .header-titles p { font-size: 0.85rem; margin: 4px 0 0 0; color: var(--muted); font-weight: 500; }
@@ -50,19 +49,10 @@
 
         .filter-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         
-        /* Botão Limpar Estilizado */
         #btnLimpar {
-            background: var(--danger);
-            color: white;
-            border: 1px solid var(--danger);
-            padding: 10px 14px;
-            border-radius: 25px;
-            font-size: 0.8rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-weight: bold;
+            background: var(--danger); color: white; border: none;
+            padding: 10px 14px; border-radius: 25px; font-size: 0.8rem;
+            cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: bold;
         }
 
         .filter-btn {
@@ -107,7 +97,7 @@
 <div class="container">
     <div class="header">
         <div class="header-titles">
-            <h2>🚌 Itinenários do Transporte Fretado</h2>
+            <h2>🚌 Itinerários do Transporte Fretado</h2>
             <p>Facilities & Security</p>
         </div>
         <div id="relogio" style="font-size: 0.8rem; opacity: 0.6;">00:00:00</div>
@@ -166,7 +156,8 @@
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
     setInterval(() => {
-        document.getElementById('relogio').innerText = new Date().toLocaleTimeString('pt-br');
+        const rel = document.getElementById('relogio');
+        if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
     }, 1000);
 
     function toggleDropdown(id) {
@@ -178,9 +169,14 @@
 
     async function carregarCSV() {
         try {
-            // OBS: Verifique se o nome do arquivo é 'ITINERÁRIOS.csv' ou 'pontos.csv'
-            const response = await fetch('ITINERÁRIOS.csv'); 
-            const data = await response.text();
+            // AJUSTADO PARA LER O ARQUIVO pontos.csv
+            const response = await fetch('pontos.csv');
+            if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
+
+            const buffer = await response.arrayBuffer();
+            const decoder = new TextDecoder('iso-8859-1'); // Para aceitar acentos do Excel
+            const data = decoder.decode(buffer);
+
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
@@ -196,12 +192,15 @@
             });
             atualizarMenus();
             aplicarFiltros();
-        } catch (e) { console.error("Erro ao carregar CSV:", e); }
+        } catch (e) { 
+            console.error("Erro:", e);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red">Erro ao carregar pontos.csv</td></tr>`;
+        }
     }
 
     function atualizarMenus() {
         const criarItens = (campo, id) => {
-            const unicos = [...new Set(pontos.map(p => p[campo]))].sort();
+            const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v !== '-').sort();
             document.getElementById(id).innerHTML = unicos.map(v => `
                 <div class="dropdown-item" onclick="setFiltro('${campo}', '${v}')">${v}</div>
             `).join('');
@@ -242,13 +241,18 @@
     }
 
     function compartilhar(p) {
-        // Texto solicitado na ação
-        const cabecalho = "SLU, segue os dados do acesso de hoje";
-        const msg = `${cabecalho}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
+        // Título em Negrito e CAIXA ALTA
+        const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
+        // Data necessidade (negrito) e campo informativo (itálico)
+        const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
+        
+        const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
+        
         window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
     }
 
     function mostrarTabela(lista) {
+        const tableBody = document.getElementById('tableBody');
         tableBody.innerHTML = lista.map(p => `
             <tr>
                 <td data-label="Turno">${p.turno}</td>
