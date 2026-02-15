@@ -154,7 +154,6 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
-    // Relógio
     setInterval(() => {
         const rel = document.getElementById('relogio');
         if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
@@ -167,41 +166,29 @@
         document.getElementById(id).classList.toggle("show");
     }
 
-    // FUNÇÃO PARA CORRIGIR TEXTOS QUEBRADOS (GONÃ‡ALVES -> GONÇALVES)
-    function limparTexto(texto) {
-        if (!texto) return "-";
-        try {
-            // Esta técnica tenta re-decodificar textos que o navegador leu errado
-            return decodeURIComponent(escape(texto.trim()));
-        } catch (e) {
-            // Se falhar, apenas limpa espaços e retorna o original
-            return texto.trim();
-        }
-    }
-
     async function carregarCSV() {
         try {
             const response = await fetch('pontos.csv'); 
-            if (!response.ok) throw new Error("Arquivo não encontrado!");
+            if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
             
-            // PELAS IMAGENS, SEU ARQUIVO PARECE ESTAR EM UTF-8 COM ERRO DE EXIBIÇÃO
-            // Vamos ler como UTF-8 e aplicar a limpeza de caracteres.
+            // Forçamos a leitura em UTF-8 para aceitar o "Ç" e acentos que você corrigiu
             const decoder = new TextDecoder('utf-8'); 
             const data = decoder.decode(buffer);
 
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                const col = linha.split(','); // Separador VÍRGULA conforme você confirmou
+                // AGORA USANDO VÍRGULA (,) COMO SEPARADOR
+                const col = linha.split(','); 
                 return {
-                    turno: limparTexto(col[0]),
-                    linha: limparTexto(col[1]),
-                    tipo:  limparTexto(col[2]),
-                    bairro: limparTexto(col[3]),
-                    ponto:  limparTexto(col[4]),
-                    parada: limparTexto(col[5])
+                    turno: col[0]?.trim() || '-',
+                    linha: col[1]?.trim() || '-',
+                    tipo:  col[2]?.trim() || '-',
+                    bairro: col[3]?.trim() || '-',
+                    ponto:  col[4]?.trim() || '-',
+                    parada: col[5]?.trim() || '-'
                 };
             });
 
@@ -209,7 +196,7 @@
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Erro ao carregar CSV.</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Erro ao carregar os dados do arquivo pontos.csv</td></tr>`;
         }
     }
 
@@ -261,13 +248,13 @@
 
     function compartilhar(p) {
         const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
-        const msg = `${cabecalho}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
+        const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
+        const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
         window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
     }
 
     function mostrarTabela(lista) {
         const tableBody = document.getElementById('tableBody');
-        if(!tableBody) return;
         tableBody.innerHTML = lista.map(p => `
             <tr>
                 <td data-label="Turno">${p.turno}</td>
@@ -277,7 +264,9 @@
                 <td data-label="Ponto">${p.ponto}</td>
                 <td data-label="Parada">${p.parada}</td>
                 <td data-label="Ação">
-                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Enviar</button>
+                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>
+                        📲 Avisar Transporte
+                    </button>
                 </td>
             </tr>
         `).join('');
