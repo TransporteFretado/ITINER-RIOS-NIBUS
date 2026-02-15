@@ -15,7 +15,7 @@
             --muted: #64748b;
             --accent: #4361ee15;
             --danger: #FF0000;
-            --highlight: #fff3cd; /* Cor de destaque para Parada */
+            --highlight: #fff3cd;
         }
 
         @media (prefers-color-scheme: dark) {
@@ -39,11 +39,24 @@
 
         .container { max-width: 1100px; margin: 0 auto; }
         
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .header-titles h2 { font-size: 1.2rem; margin: 0; color: var(--primary); font-weight: 800; }
-        .header-titles p { font-size: 0.75rem; margin: 0; color: var(--muted); }
+        .header-titles p { font-size: 0.75rem; margin: 0; color: var(--muted); font-weight: bold; }
+        
+        /* Estilo para a nova descrição explicativa */
+        .header-description { 
+            font-size: 0.75rem; 
+            color: var(--muted); 
+            line-height: 1.4; 
+            margin-bottom: 15px; 
+            max-width: 800px;
+            background: var(--accent);
+            padding: 10px;
+            border-radius: 8px;
+        }
+
         .datetime-box { text-align: right; line-height: 1.2; }
-        #data-extenso { font-size: 0.75rem; font-weight: bold; color: var(--text); text-transform: lowercase; }
+        #data-extenso { font-size: 0.75rem; font-weight: bold; color: var(--text); }
         #relogio { font-size: 0.7rem; opacity: 0.7; }
 
         .search-box input {
@@ -69,14 +82,12 @@
         }
         .dropdown-content.show { display: block; }
         .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 0.8rem; }
-        .dropdown-item:hover { background: var(--accent); }
 
         .table-wrapper { background: var(--card); border-radius: 12px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { background: var(--accent); padding: 12px; text-align: left; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 
-        /* Destaque para Parada */
         .badge-parada {
             background: var(--highlight);
             color: #856404;
@@ -93,10 +104,7 @@
             tr { background: var(--card); margin-bottom: 10px; padding: 12px; border-radius: 10px; border: 1px solid var(--border); }
             td { display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border: none; }
             td::before { content: attr(data-label); font-weight: 700; color: var(--muted); font-size: 0.65rem; text-transform: uppercase; }
-            
             .btn-share { margin-top: 8px; font-size: 0.7rem; padding: 8px 12px; }
-            
-            /* Destaque maior da parada no celular */
             td[data-label="Parada"] { 
                 background: var(--accent); 
                 margin: 5px -12px; 
@@ -127,28 +135,28 @@
         </div>
     </div>
 
+    <div class="header-description">
+        Site desenvolvido para consulta de itinerários, caso queira algum dos pontos que não seja o seu, após pesquisar e encontrar seu ponto, clique no campo enviar para informar o time de transporte.
+    </div>
+
     <div class="search-box">
         <input type="text" id="search" placeholder="Procure por linha, bairro ou ponto..." autocomplete="off">
     </div>
 
     <div class="filter-controls">
         <button id="btnLimpar" onclick="limparFiltros()">🔄 Limpar</button>
-        
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroTurno" onclick="toggleDropdown('dropTurno')">Turno ▾</button>
             <div id="dropTurno" class="dropdown-content"></div>
         </div>
-        
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroTipo" onclick="toggleDropdown('dropTipo')">Tipo ▾</button>
             <div id="dropTipo" class="dropdown-content"></div>
         </div>
-
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroBairro" onclick="toggleDropdown('dropBairro')">Bairro ▾</button>
             <div id="dropBairro" class="dropdown-content"></div>
         </div>
-
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroLinha" onclick="toggleDropdown('dropLinha')">Linha ▾</button>
             <div id="dropLinha" class="dropdown-content"></div>
