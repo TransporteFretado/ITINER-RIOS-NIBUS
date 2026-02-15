@@ -43,7 +43,6 @@
         .header-titles h2 { font-size: 1.2rem; margin: 0; color: var(--primary); font-weight: 800; }
         .header-titles p { font-size: 0.75rem; margin: 0; color: var(--muted); font-weight: bold; }
         
-        /* Estilo para a nova descrição explicativa */
         .header-description { 
             font-size: 0.75rem; 
             color: var(--muted); 
@@ -136,7 +135,7 @@
     </div>
 
     <div class="header-description">
-        Site desenvolvido para consulta de itinerários, caso queira algum dos pontos que não seja o seu, após pesquisar e encontrar seu ponto, clique no campo enviar para informar o time de transporte.
+        Site desenvolvido para consulta de itinerários, caso queira ultilizar algum dos pontos que não seja o seu, após pesquisar e encontrar seu ponto, clique no campo "📲 Enviar" para informar o time de transporte.
     </div>
 
     <div class="search-box">
@@ -275,7 +274,11 @@
     }
 
     function compartilhar(p) {
-        const msg = `*SOLICITAÇÃO DE ACESSO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
+        // Pega a data atual formatada para a mensagem
+        const agora = new Date();
+        const dataFormatada = `${String(agora.getDate()).padStart(2, '0')}/${String(agora.getMonth() + 1).padStart(2, '0')}`;
+        
+        const msg = `*SOLICITAÇÃO DE ACESSO*%0A%0A*Data da necessidade:* ${dataFormatada}%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
         window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
     }
 
