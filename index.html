@@ -33,7 +33,6 @@
             background: var(--bg);
             color: var(--text);
             margin: 0; padding: 15px;
-            transition: all 0.3s ease;
         }
 
         .container { max-width: 1100px; margin: 0 auto; }
@@ -155,6 +154,7 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
+    // Relógio em tempo real
     setInterval(() => {
         const rel = document.getElementById('relogio');
         if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
@@ -169,18 +169,21 @@
 
     async function carregarCSV() {
         try {
-            // AJUSTADO PARA LER O ARQUIVO pontos.csv
-            const response = await fetch('pontos.csv');
+            // NOME DO ARQUIVO ATUALIZADO
+            const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
-            const decoder = new TextDecoder('iso-8859-1'); // Para aceitar acentos do Excel
+            // ISO-8859-1 para garantir acentos do Excel Brasil
+            const decoder = new TextDecoder('iso-8859-1'); 
             const data = decoder.decode(buffer);
 
+            // Divide linhas e remove vazias
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                const col = linha.split(';');
+                // SEPARADOR POR VÍRGULA CONFORME INFORMADO
+                const col = linha.split(','); 
                 return {
                     turno: col[0]?.trim() || '-',
                     linha: col[1]?.trim() || '-',
@@ -190,20 +193,24 @@
                     parada: col[5]?.trim() || '-'
                 };
             });
+
             atualizarMenus();
             aplicarFiltros();
         } catch (e) { 
-            console.error("Erro:", e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red">Erro ao carregar pontos.csv</td></tr>`;
+            console.error(e);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados. Verifique o arquivo pontos.csv</td></tr>`;
         }
     }
 
     function atualizarMenus() {
         const criarItens = (campo, id) => {
             const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v !== '-').sort();
-            document.getElementById(id).innerHTML = unicos.map(v => `
-                <div class="dropdown-item" onclick="setFiltro('${campo}', '${v}')">${v}</div>
-            `).join('');
+            const container = document.getElementById(id);
+            if(container) {
+                container.innerHTML = unicos.map(v => `
+                    <div class="dropdown-item" onclick="setFiltro('${campo}', '${v}')">${v}</div>
+                `).join('');
+            }
         };
         criarItens('turno', 'dropTurno');
         criarItens('bairro', 'dropBairro');
@@ -214,7 +221,8 @@
     function setFiltro(campo, valor) {
         filtroAtivo[campo] = valor;
         const btnId = 'btnFiltro' + campo.charAt(0).toUpperCase() + campo.slice(1);
-        document.getElementById(btnId).classList.add('active');
+        const btn = document.getElementById(btnId);
+        if(btn) btn.classList.add('active');
         document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
         aplicarFiltros();
     }
@@ -241,9 +249,9 @@
     }
 
     function compartilhar(p) {
-        // Título em Negrito e CAIXA ALTA
+        // Título: Negrito e Caixa Alta
         const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
-        // Data necessidade (negrito) e campo informativo (itálico)
+        // Data: Negrito e informativo em Itálico
         const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
         
         const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
@@ -253,6 +261,7 @@
 
     function mostrarTabela(lista) {
         const tableBody = document.getElementById('tableBody');
+        if(!tableBody) return;
         tableBody.innerHTML = lista.map(p => `
             <tr>
                 <td data-label="Turno">${p.turno}</td>
@@ -270,8 +279,17 @@
         `).join('');
     }
 
+    // Fechar dropdowns ao clicar fora
+    window.onclick = function(event) {
+        if (!event.target.matches('.filter-btn')) {
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+        }
+    }
+
     document.getElementById("search").addEventListener("input", aplicarFiltros);
-    carregarCSV();
+    
+    // Inicia o carregamento
+    window.onload = carregarCSV;
 </script>
 
 </body>
