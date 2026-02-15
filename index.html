@@ -50,6 +50,7 @@
 
         .filter-controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         
+        /* Botão Limpar Estilizado */
         #btnLimpar {
             background: var(--danger);
             color: white;
@@ -177,6 +178,7 @@
 
     async function carregarCSV() {
         try {
+            // OBS: Verifique se o nome do arquivo é 'ITINERÁRIOS.csv' ou 'pontos.csv'
             const response = await fetch('ITINERÁRIOS.csv'); 
             const data = await response.text();
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
@@ -239,15 +241,10 @@
         aplicarFiltros();
     }
 
-    // MODIFICAÇÃO SOLICITADA NA MENSAGEM DO WHATSAPP
     function compartilhar(p) {
-        // Título em Negrito e Caixa Alta
-        const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
-        // Data necessidade (negrito) e campo informativo (itálico)
-        const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
-        
-        const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
-        
+        // Texto solicitado na ação
+        const cabecalho = "SLU, segue os dados do acesso de hoje";
+        const msg = `${cabecalho}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
         window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
     }
 
