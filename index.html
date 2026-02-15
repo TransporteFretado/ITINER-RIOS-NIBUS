@@ -154,6 +154,7 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
+    // Relógio
     setInterval(() => {
         const rel = document.getElementById('relogio');
         if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
@@ -166,13 +167,14 @@
         document.getElementById(id).classList.toggle("show");
     }
 
-    // Função para corrigir caracteres que o Excel salva errado (ex: GonÃ§alves -> Gonçalves)
-    function corrigirAcentos(texto) {
+    // FUNÇÃO PARA CORRIGIR TEXTOS QUEBRADOS (GONÃ‡ALVES -> GONÇALVES)
+    function limparTexto(texto) {
         if (!texto) return "-";
         try {
-            // Tenta converter de UTF-8 bagunçado para texto legível
+            // Esta técnica tenta re-decodificar textos que o navegador leu errado
             return decodeURIComponent(escape(texto.trim()));
         } catch (e) {
+            // Se falhar, apenas limpa espaços e retorna o original
             return texto.trim();
         }
     }
@@ -180,26 +182,26 @@
     async function carregarCSV() {
         try {
             const response = await fetch('pontos.csv'); 
-            if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
+            if (!response.ok) throw new Error("Arquivo não encontrado!");
 
             const buffer = await response.arrayBuffer();
             
-            // Decodificador UTF-8 por padrão
+            // PELAS IMAGENS, SEU ARQUIVO PARECE ESTAR EM UTF-8 COM ERRO DE EXIBIÇÃO
+            // Vamos ler como UTF-8 e aplicar a limpeza de caracteres.
             const decoder = new TextDecoder('utf-8'); 
             const data = decoder.decode(buffer);
 
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // ALTERADO PARA PONTO E VÍRGULA (;)
-                const col = linha.split(';'); 
+                const col = linha.split(','); // Separador VÍRGULA conforme você confirmou
                 return {
-                    turno: corrigirAcentos(col[0]),
-                    linha: corrigirAcentos(col[1]),
-                    tipo:  corrigirAcentos(col[2]),
-                    bairro: corrigirAcentos(col[3]),
-                    ponto:  corrigirAcentos(col[4]),
-                    parada: corrigirAcentos(col[5])
+                    turno: limparTexto(col[0]),
+                    linha: limparTexto(col[1]),
+                    tipo:  limparTexto(col[2]),
+                    bairro: limparTexto(col[3]),
+                    ponto:  limparTexto(col[4]),
+                    parada: limparTexto(col[5])
                 };
             });
 
@@ -207,7 +209,7 @@
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao processar o arquivo. Verifique o separador ";"</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Erro ao carregar CSV.</td></tr>`;
         }
     }
 
