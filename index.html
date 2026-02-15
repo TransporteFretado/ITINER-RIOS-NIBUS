@@ -168,19 +168,19 @@
 
     async function carregarCSV() {
         try {
+            // Buscando o arquivo pontos.csv
             const response = await fetch('pontos.csv'); 
-            if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
+            if (!response.ok) throw new Error("Arquivo não encontrado!");
 
             const buffer = await response.arrayBuffer();
-            
-            // Forçamos a leitura em UTF-8 para aceitar o "Ç" e acentos que você corrigiu
             const decoder = new TextDecoder('utf-8'); 
             const data = decoder.decode(buffer);
 
+            // Divide as linhas
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // AGORA USANDO VÍRGULA (,) COMO SEPARADOR
+                // CORREÇÃO AQUI: Agora usando split por vírgula (,) para separar colunas
                 const col = linha.split(','); 
                 return {
                     turno: col[0]?.trim() || '-',
@@ -196,7 +196,7 @@
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; padding:20px;">Erro ao carregar os dados do arquivo pontos.csv</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7">Erro ao carregar o arquivo pontos.csv. Verifique se o nome está correto.</td></tr>`;
         }
     }
 
