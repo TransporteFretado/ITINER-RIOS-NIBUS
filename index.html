@@ -32,33 +32,32 @@
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
-            margin: 0; padding: 10px; /* Reduzido de 15px */
+            margin: 0; padding: 10px;
         }
 
         .container { max-width: 1100px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        
+        /* Cabeçalho com Relógio e Data */
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
         .header-titles h2 { font-size: 1.1rem; margin: 0; }
-        .header-titles p { font-size: 0.75rem; margin: 2px 0 0 0; color: var(--muted); }
+        .header-titles p { font-size: 0.75rem; margin: 0; color: var(--muted); }
+        .datetime-box { text-align: right; line-height: 1.2; }
+        #data-extenso { font-size: 0.75rem; font-weight: bold; color: var(--primary); text-transform: lowercase; }
+        #relogio { font-size: 0.7rem; opacity: 0.7; }
 
         .search-box input {
             width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 10px;
             background: var(--card); color: var(--text); font-size: 14px; outline: none; box-sizing: border-box;
         }
 
-        .filter-controls { display: flex; gap: 6px; margin: 15px 0; flex-wrap: wrap; }
+        .filter-controls { display: flex; gap: 6px; margin: 12px 0; flex-wrap: wrap; }
         
-        #btnLimpar {
-            background: var(--danger); color: white; border: none;
+        .filter-btn, #btnLimpar {
             padding: 8px 12px; border-radius: 20px; font-size: 0.75rem;
-            cursor: pointer; font-weight: bold;
+            cursor: pointer; font-weight: bold; border: 1px solid var(--border);
         }
-
-        .filter-btn {
-            background: var(--card); border: 1px solid var(--border);
-            padding: 8px 12px; border-radius: 20px; font-size: 0.75rem;
-            color: var(--text); cursor: pointer;
-        }
-
+        #btnLimpar { background: var(--danger); color: white; border: none; }
+        .filter-btn { background: var(--card); color: var(--text); }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
         .dropdown-content {
@@ -70,52 +69,26 @@
         .dropdown-content.show { display: block; }
         .dropdown-item { padding: 8px 12px; cursor: pointer; border-radius: 6px; font-size: 0.85rem; }
 
-        /* Estilo da Tabela Desktop */
         .table-wrapper { background: var(--card); border-radius: 12px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; min-width: 900px; }
         th { background: var(--accent); padding: 12px; text-align: left; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; }
         td { padding: 12px; border-bottom: 1px solid var(--border); font-size: 0.8rem; }
 
-        /* AJUSTES PARA CELULAR (CARDS COMPACTOS) */
+        /* AJUSTE MOBILE COMPACTO */
         @media (max-width: 900px) {
             table, thead, tbody, th, td, tr { display: block; }
             table { min-width: auto; }
             thead { display: none; }
+            tr { background: var(--card); margin-bottom: 8px; padding: 10px; border-radius: 10px; border: 1px solid var(--border); }
+            td { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border: none; }
+            td::before { content: attr(data-label); font-weight: 700; color: var(--muted); font-size: 0.65rem; text-transform: uppercase; }
             
-            tr { 
-                background: var(--card);
-                margin-bottom: 10px; 
-                padding: 10px; 
-                border-radius: 12px;
-                border: 1px solid var(--border);
-                box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            }
-
-            td { 
-                display: flex; 
-                justify-content: space-between; 
-                padding: 4px 0; /* Espaçamento entre linhas do card bem reduzido */
-                border: none; 
-                font-size: 0.8rem;
-            }
-
-            td::before { 
-                content: attr(data-label); 
-                font-weight: 700; 
-                color: var(--muted); 
-                font-size: 0.7rem; 
-                text-transform: uppercase;
-            }
-
-            /* Estilo específico para a linha e ação no card */
-            td[data-label="Linha"] { border-bottom: 1px dashed var(--border); margin-bottom: 5px; padding-bottom: 8px; }
-            td[data-label="Ação"] { margin-top: 10px; padding-top: 5px; }
-
+            /* Botão Enviar compacto no Mobile */
             .btn-share {
-                width: 100%; /* Botão ocupa toda a largura no card mobile */
-                justify-content: center;
-                padding: 10px;
-                font-size: 0.8rem;
+                width: auto; /* Não ocupa mais 100% */
+                padding: 6px 12px;
+                font-size: 0.75rem;
+                margin-left: auto; /* Alinha à direita no card */
             }
         }
 
@@ -123,7 +96,9 @@
             background: var(--whatsapp); color: white; border: none;
             padding: 6px 12px; border-radius: 6px; cursor: pointer;
             display: flex; align-items: center; gap: 5px; font-weight: 600;
+            transition: opacity 0.2s;
         }
+        .btn-share:active { opacity: 0.7; }
     </style>
 </head>
 <body>
@@ -131,29 +106,29 @@
 <div class="container">
     <div class="header">
         <div class="header-titles">
-            <h2>🚌 Itinerários Fretados</h2>
-            <p>Facilities & Security</p>
+            <h2>🚌 Mobilidade Pro</h2>
+            <p>Itinerários Fretados</p>
         </div>
-        <div id="relogio" style="font-size: 0.7rem; opacity: 0.6;">00:00:00</div>
+        <div class="datetime-box">
+            <div id="data-extenso">00/00 - dom</div>
+            <div id="relogio">00:00:00</div>
+        </div>
     </div>
 
     <div class="search-box">
-        <input type="text" id="search" placeholder="Busque por bairro ou linha..." autocomplete="off">
+        <input type="text" id="search" placeholder="Busque por bairro, linha ou ponto..." autocomplete="off">
     </div>
 
     <div class="filter-controls">
         <button id="btnLimpar" onclick="limparFiltros()">🔄 Limpar</button>
-
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroTurno" onclick="toggleDropdown('dropTurno')">Turno ▾</button>
             <div id="dropTurno" class="dropdown-content"></div>
         </div>
-
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroBairro" onclick="toggleDropdown('dropBairro')">Bairro ▾</button>
             <div id="dropBairro" class="dropdown-content"></div>
         </div>
-
         <div style="position: relative;">
             <button class="filter-btn" id="btnFiltroLinha" onclick="toggleDropdown('dropLinha')">Linha ▾</button>
             <div id="dropLinha" class="dropdown-content"></div>
@@ -161,7 +136,7 @@
     </div>
 
     <div class="table-wrapper">
-        <table id="tabelaDados">
+        <table>
             <thead>
                 <tr>
                     <th>Turno</th>
@@ -182,10 +157,20 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null };
 
-    setInterval(() => {
-        const rel = document.getElementById('relogio');
-        if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
-    }, 1000);
+    // Relógio e Data Atualizada
+    function atualizarTempo() {
+        const agora = new Date();
+        const dias = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+        
+        const dia = String(agora.getDate()).padStart(2, '0');
+        const mes = String(agora.getMonth() + 1).padStart(2, '0');
+        const diaSemana = dias[agora.getDay()];
+        
+        document.getElementById('data-extenso').innerText = `${dia}/${mes} - ${diaSemana}`;
+        document.getElementById('relogio').innerText = agora.toLocaleTimeString('pt-br');
+    }
+    setInterval(atualizarTempo, 1000);
+    atualizarTempo();
 
     function toggleDropdown(id) {
         document.querySelectorAll('.dropdown-content').forEach(d => {
@@ -279,7 +264,7 @@
                 <td data-label="Ponto">${p.ponto}</td>
                 <td data-label="Parada">${p.parada}</td>
                 <td data-label="Ação">
-                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Avisar Transporte</button>
+                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Avisar</button>
                 </td>
             </tr>
         `).join('');
