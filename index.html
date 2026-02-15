@@ -2,9 +2,8 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Consulta Itinerários</title>
+    <title>Mobilidade Pro - Itinerários</title>
     <style>
         :root {
             --primary: #4361ee;
@@ -155,6 +154,7 @@
     let pontos = [];
     let filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
 
+    // Relógio em tempo real
     setInterval(() => {
         const rel = document.getElementById('relogio');
         if(rel) rel.innerText = new Date().toLocaleTimeString('pt-br');
@@ -169,11 +169,128 @@
 
     async function carregarCSV() {
         try {
+            // NOME DO ARQUIVO ATUALIZADO
             const response = await fetch('pontos.csv'); 
             if (!response.ok) throw new Error("Arquivo pontos.csv não encontrado!");
 
             const buffer = await response.arrayBuffer();
-            
-            // CORREÇÃO DE ACENTOS: Tentamos Windows-1252 que é o padrão mais comum do Excel Brasil
-            // Se ainda assim bugar, mude
+            // ISO-8859-1 para garantir acentos do Excel Brasil
+            const decoder = new TextDecoder('iso-8859-1'); 
+            const data = decoder.decode(buffer);
 
+            // Divide linhas e remove vazias
+            const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
+
+            pontos = linhasCSV.slice(1).map(linha => {
+                // SEPARADOR POR VÍRGULA CONFORME INFORMADO
+                const col = linha.split(','); 
+                return {
+                    turno: col[0]?.trim() || '-',
+                    linha: col[1]?.trim() || '-',
+                    tipo:  col[2]?.trim() || '-',
+                    bairro: col[3]?.trim() || '-',
+                    ponto:  col[4]?.trim() || '-',
+                    parada: col[5]?.trim() || '-'
+                };
+            });
+
+            atualizarMenus();
+            aplicarFiltros();
+        } catch (e) { 
+            console.error(e);
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados. Verifique o arquivo pontos.csv</td></tr>`;
+        }
+    }
+
+    function atualizarMenus() {
+        const criarItens = (campo, id) => {
+            const unicos = [...new Set(pontos.map(p => p[campo]))].filter(v => v !== '-').sort();
+            const container = document.getElementById(id);
+            if(container) {
+                container.innerHTML = unicos.map(v => `
+                    <div class="dropdown-item" onclick="setFiltro('${campo}', '${v}')">${v}</div>
+                `).join('');
+            }
+        };
+        criarItens('turno', 'dropTurno');
+        criarItens('bairro', 'dropBairro');
+        criarItens('linha', 'dropLinha');
+        criarItens('tipo', 'dropTipo');
+    }
+
+    function setFiltro(campo, valor) {
+        filtroAtivo[campo] = valor;
+        const btnId = 'btnFiltro' + campo.charAt(0).toUpperCase() + campo.slice(1);
+        const btn = document.getElementById(btnId);
+        if(btn) btn.classList.add('active');
+        document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+        aplicarFiltros();
+    }
+
+    function aplicarFiltros() {
+        let res = pontos;
+        if (filtroAtivo.turno) res = res.filter(p => p.turno === filtroAtivo.turno);
+        if (filtroAtivo.bairro) res = res.filter(p => p.bairro === filtroAtivo.bairro);
+        if (filtroAtivo.linha) res = res.filter(p => p.linha === filtroAtivo.linha);
+        if (filtroAtivo.tipo) res = res.filter(p => p.tipo === filtroAtivo.tipo);
+
+        const busca = document.getElementById('search').value.toLowerCase();
+        if (busca) {
+            res = res.filter(p => Object.values(p).some(v => v.toLowerCase().includes(busca)));
+        }
+        mostrarTabela(res);
+    }
+
+    function limparFiltros() {
+        filtroAtivo = { turno: null, bairro: null, linha: null, tipo: null };
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('search').value = "";
+        aplicarFiltros();
+    }
+
+    function compartilhar(p) {
+        // Título: Negrito e Caixa Alta
+        const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
+        // Data: Negrito e informativo em Itálico
+        const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
+        
+        const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
+        
+        window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
+    }
+
+    function mostrarTabela(lista) {
+        const tableBody = document.getElementById('tableBody');
+        if(!tableBody) return;
+        tableBody.innerHTML = lista.map(p => `
+            <tr>
+                <td data-label="Turno">${p.turno}</td>
+                <td data-label="Linha" style="font-weight:bold; color:var(--primary)">${p.linha}</td>
+                <td data-label="Tipo de Viagem">${p.tipo}</td>
+                <td data-label="Bairro">${p.bairro}</td>
+                <td data-label="Ponto">${p.ponto}</td>
+                <td data-label="Parada">${p.parada}</td>
+                <td data-label="Ação">
+                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>
+                        📲 Avisar Transporte
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    // Fechar dropdowns ao clicar fora
+    window.onclick = function(event) {
+        if (!event.target.matches('.filter-btn')) {
+            document.querySelectorAll('.dropdown-content').forEach(d => d.classList.remove('show'));
+        }
+    }
+
+    document.getElementById("search").addEventListener("input", aplicarFiltros);
+    
+    // Inicia o carregamento
+    window.onload = carregarCSV;
+</script>
+
+</body>
+</html>
