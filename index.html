@@ -166,6 +166,17 @@
         document.getElementById(id).classList.toggle("show");
     }
 
+    // Função para corrigir caracteres que o Excel salva errado (ex: GonÃ§alves -> Gonçalves)
+    function corrigirAcentos(texto) {
+        if (!texto) return "-";
+        try {
+            // Tenta converter de UTF-8 bagunçado para texto legível
+            return decodeURIComponent(escape(texto.trim()));
+        } catch (e) {
+            return texto.trim();
+        }
+    }
+
     async function carregarCSV() {
         try {
             const response = await fetch('pontos.csv'); 
@@ -173,24 +184,22 @@
 
             const buffer = await response.arrayBuffer();
             
-            // CORREÇÃO DOS ACENTOS:
-            // Tentamos Windows-1252 (comum no Excel Brasil). 
-            // Se ainda assim o 'ç' der erro, troque 'windows-1252' por 'utf-8'.
-            const decoder = new TextDecoder('windows-1252'); 
+            // Decodificador UTF-8 por padrão
+            const decoder = new TextDecoder('utf-8'); 
             const data = decoder.decode(buffer);
 
             const linhasCSV = data.split(/\r?\n/).filter(l => l.trim() !== "");
 
             pontos = linhasCSV.slice(1).map(linha => {
-                // SEPARADOR POR VÍRGULA (,)
-                const col = linha.split(','); 
+                // ALTERADO PARA PONTO E VÍRGULA (;)
+                const col = linha.split(';'); 
                 return {
-                    turno: col[0]?.trim() || '-',
-                    linha: col[1]?.trim() || '-',
-                    tipo:  col[2]?.trim() || '-',
-                    bairro: col[3]?.trim() || '-',
-                    ponto:  col[4]?.trim() || '-',
-                    parada: col[5]?.trim() || '-'
+                    turno: corrigirAcentos(col[0]),
+                    linha: corrigirAcentos(col[1]),
+                    tipo:  corrigirAcentos(col[2]),
+                    bairro: corrigirAcentos(col[3]),
+                    ponto:  corrigirAcentos(col[4]),
+                    parada: corrigirAcentos(col[5])
                 };
             });
 
@@ -198,7 +207,7 @@
             aplicarFiltros();
         } catch (e) { 
             console.error(e);
-            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao carregar os dados. Verifique os acentos do arquivo.</td></tr>`;
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7" style="text-align:center; color:red; padding:20px;">Erro ao processar o arquivo. Verifique o separador ";"</td></tr>`;
         }
     }
 
@@ -250,10 +259,7 @@
 
     function compartilhar(p) {
         const cabecalho = "*SLU, SEGUE OS DADOS DO ACESSO DE HOJE*";
-        const dataInfo = "*Data necessidade* (_informe a data da sua utilização_)";
-        
-        const msg = `${cabecalho}%0A%0A${dataInfo}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Viagem:* ${p.tipo}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
-        
+        const msg = `${cabecalho}%0A%0A🚌 *ITINERÁRIO*%0A%0A*Linha:* ${p.linha}%0A*Turno:* ${p.turno}%0A*Bairro:* ${p.bairro}%0A*Parada:* ${p.parada}`;
         window.open(`https://api.whatsapp.com/send?phone=5598982380013&text=${msg}`, '_blank');
     }
 
@@ -269,9 +275,7 @@
                 <td data-label="Ponto">${p.ponto}</td>
                 <td data-label="Parada">${p.parada}</td>
                 <td data-label="Ação">
-                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>
-                        📲 Avisar Transporte
-                    </button>
+                    <button class="btn-share" onclick='compartilhar(${JSON.stringify(p)})'>📲 Enviar</button>
                 </td>
             </tr>
         `).join('');
